@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotating 3D Text App (Centered Rotation)</title>
+    <script src="./three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #input-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+        }
+
+        #text-input {
+            padding: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        let scene, camera, renderer, textMesh;
+        let color;
+        const urlParams = new URLSearchParams(window.location.search);
+        const colorParam = '#' + urlParams.get('color') || "#aaaaff";
+        const text = urlParams.get('text') || "Hello World";
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            camera.position.z = 5;
+
+            const light = new THREE.PointLight(colorParam, 1, 100);
+            light.position.set(0, 0, 10);
+            scene.add(light);
+
+            createText(text);
+
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function createText(text) {
+            const loader = new THREE.FontLoader();
+            loader.load('./typeface.json', function (font) {
+                const geometry = new THREE.TextGeometry(text, {
+                    font: font,
+                    size: 0.5,
+                    height: 0.1,
+                    curveSegments: 12,
+                    bevelEnabled: false,
+                });
+                const material = new THREE.MeshPhongMaterial({ color: colorParam });
+                textMesh = new THREE.Mesh(geometry, material);
+
+                // Center the text
+                geometry.computeBoundingBox();
+                const centerOffset = new THREE.Vector3(
+                    -(geometry.boundingBox.max.x - geometry.boundingBox.min.x) / 2,
+                    -(geometry.boundingBox.max.y - geometry.boundingBox.min.y) / 2,
+                    -(geometry.boundingBox.max.z - geometry.boundingBox.min.z) / 2
+                );
+                textMesh.position.copy(centerOffset);
+
+                scene.add(textMesh);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (textMesh) textMesh.rotation.x += 0.01;
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+
+</html>
